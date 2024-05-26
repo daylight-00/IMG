@@ -1,29 +1,27 @@
 #!/usr/bin/python
-import os, sys
+import os
+import sys
+
 mhc_class = sys.argv[1]
-predtype= sys.argv[2]
+predtype = sys.argv[2]
 Inputname = sys.argv[3]
 Resultname = sys.argv[4]
 
-if mhc_class == "class1"  and predtype== 'tcr'  :
-    os.system('THEANO_FLAGS=mode=FAST_RUN,device=cuda3,floatX=float32 ' \
-        +'python cnn.py ' \
-        +'data/tcr1-pan.pkl.gz ' \
-        + Inputname + ' ' \
-        + Resultname)
-    print ("\nThe running is completed!\n")
-if mhc_class=="class1" and predtype=='mhc':
-	os.system('THEANO_FLAGS=mode=FAST_RUN,device=cuda3,floatX=float32 python cnn.py data/mhc1-pan.pkl.gz '+Inputname+' '+Resultname)
-	print("\nThe running is completed!\n")
+def run_cnn(model_path, input_name, result_name, device='cuda'):
+    os.system(f'python cnn.py {model_path} {input_name} {result_name} --device {device}')
 
-if mhc_class=="class2" and predtype=='mhc':
-	os.system('THEANO_FLAGS=mode=FAST_RUN,device=cuda0,floatX=float32 python cnn.py data/mhc2-pan.pkl.gz '+Inputname+' '+Resultname)
-	print("\nThe running is completed!\n")
-if mhc_class == "class2"  and predtype== 'tcr'  :
-    os.system('THEANO_FLAGS=mode=FAST_RUN,device=cuda0,floatX=float32 ' \
-        +'python cnn.py ' \
-        +'data/tcr2-pan.pkl.gz ' \
-        + Inputname + ' ' \
-        + Resultname)
-    print ("\nThe running is completed!\n")
+if mhc_class == "class1" and predtype == 'tcr':
+    run_cnn('data/tcr1-pan.pkl.gz', Inputname, Resultname, device='cuda:3')
+    print("\nThe running is completed!\n")
 
+if mhc_class == "class1" and predtype == 'mhc':
+    run_cnn('data/mhc1-pan.pkl.gz', Inputname, Resultname, device='cuda:3')
+    print("\nThe running is completed!\n")
+
+if mhc_class == "class2" and predtype == 'mhc':
+    run_cnn('data/mhc2-pan.pkl.gz', Inputname, Resultname, device='cuda:0')
+    print("\nThe running is completed!\n")
+
+if mhc_class == "class2" and predtype == 'tcr':
+    run_cnn('data/tcr2-pan.pkl.gz', Inputname, Resultname, device='cuda:0')
+    print("\nThe running is completed!\n")

@@ -1,35 +1,37 @@
-import gzip, cPickle
-import theano
-import theano.tensor as T
+import gzip
+import pickle
 import numpy as np
-
-def shared_dataset(data_xy, borrow=True):
-    data_x, data_y = data_xy
-    shared_x = theano.shared(np.asarray(data_x, dtype=theano.config.floatX), borrow=borrow)
-    shared_y = theano.shared(np.asarray(data_y, dtype=theano.config.floatX), borrow=borrow)
-    return shared_x, T.cast(shared_y, 'int32')
+import torch
+from torch.utils.data import Dataset, DataLoader, TensorDataset
 
 def Load_data(dataset):
-    print '... loading data'
-    train_set, valid_set, test_set = cPickle.load( gzip.open(dataset, 'rb') )
-    train_set_x, train_set_y = shared_dataset(train_set)
-    test_set_x, test_set_y   = shared_dataset(test_set)
-    valid_set_x, valid_set_y = shared_dataset(valid_set)
-    rval = [(train_set_x, train_set_y), (valid_set_x, valid_set_y), (test_set_x, test_set_y)]
-    return rval
+    print('... loading data')
+    with gzip.open(dataset, 'rb') as f:
+        train_set, valid_set, test_set = pickle.load(f, encoding='latin1')
+
+    train_set_x, train_set_y = torch.tensor(train_set[0], dtype=torch.float32), torch.tensor(train_set[1], dtype=torch.long)
+    valid_set_x, valid_set_y = torch.tensor(valid_set[0], dtype=torch.float32), torch.tensor(valid_set[1], dtype=torch.long)
+    test_set_x, test_set_y = torch.tensor(test_set[0], dtype=torch.float32), torch.tensor(test_set[1], dtype=torch.long)
+
+    train_dataset = TensorDataset(train_set_x, train_set_y)
+    valid_dataset = TensorDataset(valid_set_x, valid_set_y)
+    test_dataset = TensorDataset(test_set_x, test_set_y)
+
+    return train_dataset, valid_dataset, test_dataset
 
 def Load_data_ind(dataset):
-    print '... loading data'
-    test_set = cPickle.load( gzip.open(dataset, 'rb') )
-    test_set_x, test_set_y   = shared_dataset(test_set)
-    return [(test_set_x, test_set_y)]
+    print('... loading data')
+    with gzip.open(dataset, 'rb') as f:
+        test_set = pickle.load(f, encoding='latin1')
+    test_set_x, test_set_y = torch.tensor(test_set[0], dtype=torch.float32), torch.tensor(test_set[1], dtype=torch.long)
+    test_dataset = TensorDataset(test_set_x, test_set_y)
+    return test_dataset
 
 def Load_npdata(dataset):
-    print '... loading data'
+    print('... loading data')
     datasets = np.load(dataset)
     test_setx = datasets['test_seq']
     test_sety = datasets['test_lab']
-    test_set = (test_setx, test_sety)
-    test_set_x, test_set_y   = shared_dataset(test_set)
-    return [(test_set_x, test_set_y)]
-
+    test_set_x, test_set_y = torch.tensor(test_setx, dtype=torch.float32), torch.tensor(test_sety, dtype=torch.long)
+    test_dataset = TensorDataset(test_set_x, test_set_y)
+    return test_dataset
