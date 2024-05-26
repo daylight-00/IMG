@@ -64,7 +64,6 @@ dependencies:
   - numpy=1.16.5=py27h7e9f1db_0
   - numpy-base=1.16.5=py27hde5b4d6_0
   - openjdk=8.0.152=h46b5887_1
-  - openssl=1.1.1=h7b6447c_0
   - pandas=0.24.2=py27he6710b0_0
   - pandoc=2.9.2=0
   - pandocfilters=1.4.2=py_1
