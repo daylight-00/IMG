@@ -28,7 +28,7 @@ impact_matrix = np.array([
 # 아미노산 코드와 인덱스를 매칭하는 딕셔너리
 aa_to_index = {aa: i for i, aa in enumerate("LFIMVWCYHATGPRQSNEDK")}
 
-def encode_single_data(data):
+def deepneo_single_data(data):
     hla_name, epi_seq, target, hla_seq = data
     encoding_matrix = np.zeros((9, 369))
     for i, epi_aa in enumerate(epi_seq):
@@ -39,9 +39,9 @@ def encode_single_data(data):
                 encoding_matrix[i, j] = impact_matrix[aa_to_index[epi_aa], aa_to_index[hla_aa]]
     return encoding_matrix, target
 
-def encode_data(data_provider):
+def deepneo(data_provider):
     with Pool(processes=cpu_count()) as pool:
-        results = pool.map(encode_single_data, data_provider)
+        results = pool.map(deepneo_single_data, data_provider)
     
     encoded_matrices, target_values = zip(*results)
     encoded_matrices = np.array(encoded_matrices)

@@ -42,8 +42,3 @@ class DeepNeo(nn.Module):
             l2_reg += torch.norm(param, 2)
         loss += l2_lambda*l2_reg + l1_lambda*torch.norm(self.fc.weight, 1)
         return loss
-            
-model_map = {
-    'test'      : TestModel(),
-    'DeepNeo'   : DeepNeo(),
-}

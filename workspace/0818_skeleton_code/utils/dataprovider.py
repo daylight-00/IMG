@@ -2,16 +2,20 @@ import os
 import random
 import re
 import torch
+import pandas as pd
 from torch.utils.data import Dataset, DataLoader
 
 class DataProvider(Dataset):
     def __init__(
             self,
-            epi_path,
-            hla_path,
-            shuffle=False):
+            epi_path, epi_args,
+            hla_path, hla_args,
+            shuffle=False,
+            ):
         self.epi_path = epi_path
+        self.epi_args = epi_args
         self.hla_path = hla_path
+        self.hla_args = hla_args
         self.shuffle = shuffle
 
         self.hla_seq_map = self.make_hla_seq_map()
@@ -22,30 +26,31 @@ class DataProvider(Dataset):
         return hla_name
 
     def make_hla_seq_map(self):
-        hla_seq_map = {}
-        with open(self.hla_path, 'r') as in_file:
-            for line in in_file:
-                info = line.strip('\n').split('\t')
-                hla_name = self.normalize_hla_name(info[0])
-                hla_seq = info[1]
-                hla_seq_map[hla_name] = hla_seq
+        hla_header = self.hla_args['hla_header']
+        seq_header = self.hla_args['seq_header']
+        seperator = self.hla_args['seperator']
+
+        df_hla = pd.read_csv(self.hla_path, sep=seperator)
+        df_hla = df_hla.dropna()
+        df_hla[hla_header] = df_hla[hla_header].apply(self.normalize_hla_name)
+        hla_seq_map = dict(zip(df_hla[hla_header], df_hla[seq_header]))
         print(f'Number of HLA alleles: {len(hla_seq_map)}')
         return hla_seq_map
 
     def get_samples(self):
-        samples = []
-        with open(self.epi_path, 'r') as in_file:
-            for line in in_file:
-                info = line.strip('\n').split('\t')
-                hla_name = self.normalize_hla_name(info[0])
-                if hla_name not in self.hla_seq_map:
-                    continue
-                epi_seq = info[1]
-                target = float(info[-1])
-                samples.append((hla_name, epi_seq, target))
+        hla_header = self.epi_args['hla_header']
+        epi_header = self.epi_args['epi_header']
+        tgt_header = self.epi_args['tgt_header']
+        seperator = self.epi_args['seperator']
+
+        df_epi = pd.read_csv(self.epi_path, sep=seperator)
+        df_epi = df_epi.dropna()
+        df_epi[hla_header] = df_epi[hla_header].apply(self.normalize_hla_name)
+        df_epi = df_epi[df_epi[hla_header].isin(self.hla_seq_map)]
+        samples = list(zip(df_epi[hla_header], df_epi[epi_header], df_epi[tgt_header].astype(float)))
         print(f'Number of samples: {len(samples)}')
         if self.shuffle:
-            random.shuffle(self.samples)
+            random.shuffle(samples)
         return samples
     
     def __len__(self):

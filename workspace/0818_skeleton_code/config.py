@@ -1,15 +1,34 @@
 import torch.nn as nn
 import torch.optim as optim
+import utils.model as model
+import utils.encoder as encoder
 
 config = {
-    "model_name"        : "DeepNeo",
+    "model"             : model.DeepNeo,
+    "encoder"           : encoder.deepneo,
     "chkp_name"         : "deepneo",
     "chkp_path"         : "models",
-    "do_train"          : True,
-    "do_test"           : True,
     "Data": {
-        "epi_path"      : "dataset/mhc1.trainset.tsv",
-        "hla_path"      : "dataset/HLAseq.dat",
+        "epi_path"      : "dataset/deepneo/mhc1.trainset.tsv",
+        "epi_args"      : {
+            "epi_header": 'Epi_Seq',
+            "hla_header": 'HLA_Name',
+            "tgt_header": 'Target',
+            "seperator" : "\t",
+        },
+        "hla_path"      : "dataset/deepneo/HLAseq.dat",
+        "hla_args"      : {
+            "hla_header": 'HLA_Name',
+            "seq_header": 'HLA_Seq',
+            "seperator" : "\t",
+        },
+        "test_path"     : "dataset/deepneo/mhc1.testset.tsv",
+        "test_args"     : {
+            "epi_header": 'Epi_Seq',
+            "hla_header": 'HLA_Name',
+            "tgt_header": 'Target',
+            "seperator" : "\t",
+        },
         "max_len_hla"   : 369,
         "max_len_pep"   : 9,
         "val_size"      : 0.2,
@@ -18,10 +37,9 @@ config = {
         "batch_size"    : 1024,
         "num_epochs"    : 100,
         "patience"      : 10,
-        "learning_rate" : 0.01,
         "log_file"      : "log_train.txt",
         "regularize"    : True,
-        "criterion"     : nn.BCELoss(),
+        "criterion"     : nn.BCELoss,
         "optimizer"     : optim.SGD,
         "optimizer_args": {
             "lr"        : 0.01,
@@ -32,7 +50,6 @@ config = {
         "batch_size"    : 1024,
         "num_workers"   : 4,
         "log_file"      : "log.txt",
-        "test_set_path" : "dataset/mhc1.testset.tsv",
         "chkp_prefix"   : "best",
     },
 }
