@@ -1,0 +1,8 @@
+2024-08-18 14:20:22,353 - [Training process]: [base_model0]-[model0]-[Epoch 0000] - time:  22 s, train_acc: 0.75505, val_acc: 0.76058, train_loss: 0.51788, val_loss: 0.47296
+2024-08-18 14:33:18,963 - [Training process]: [base_model0]-[model0]-[Epoch 0000] - time:  22 s, train_acc: 0.24714, val_acc: 0.24714, train_loss: 0.70021, val_loss: 0.69315
+2024-08-18 14:35:33,557 - [Training process]: [base_model0]-[model0]-[Epoch 0000] - time:  22 s, train_acc: 0.75442, val_acc: 0.76305, train_loss: 0.52106, val_loss: 0.47527
+2024-08-18 14:35:56,190 - [Training process]: [base_model0]-[model0]-[Epoch 0001] - time:  22 s, train_acc: 0.77449, val_acc: 0.78985, train_loss: 0.46410, val_loss: 0.44035
+2024-08-18 14:36:18,805 - [Training process]: [base_model0]-[model0]-[Epoch 0002] - time:  22 s, train_acc: 0.79889, val_acc: 0.80862, train_loss: 0.43439, val_loss: 0.41278
+2024-08-18 14:36:41,489 - [Training process]: [base_model0]-[model0]-[Epoch 0003] - time:  22 s, train_acc: 0.81856, val_acc: 0.81506, train_loss: 0.41129, val_loss: 0.39533
+2024-08-18 14:51:45,215 - [Training process]: [base_model0]-[model0]-[Epoch 0000] - time:  22 s, train_acc: 0.75566, val_acc: 0.76349, train_loss: 0.51959, val_loss: 0.47567
+2024-08-18 14:52:08,020 - [Training process]: [base_model0]-[model0]-[Epoch 0001] - time:  22 s, train_acc: 0.77521, val_acc: 0.78549, train_loss: 0.46175, val_loss: 0.43846
