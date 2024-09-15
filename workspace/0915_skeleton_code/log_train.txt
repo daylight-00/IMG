@@ -1,0 +1,1 @@
+2024-09-15 04:23:44,254 - [Training process]: Epoch [1/100] - Time: 24 s, Train Acc: 0.75375, Val Acc: 0.75756, Train Loss: 0.52752, Val Loss: 0.48011
