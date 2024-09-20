@@ -1,25 +1,17 @@
 #!/bin/bash
-#SBATCH -J IMG_training # job name
-#SBATCH -o %A_cross_70.log #output name
-#SBATCH -N 1
-##SBATCH -n 1
-#SBATCH -c 16  # num of cpus
-#SBATCH -p g4090_short
-#SBATCH --gpus-per-node=1
-##SBATCH -w gpu9
-source ~/.slurmrc
-slurm_start
-#####################
-source /home/hwjang/miniconda3/bin/activate venv
+#SBATCH -J IMG_training         # job name
+#SBATCH -o %A.log               # log file name
+#SBATCH -c 8                    # num of cpus
+#SBATCH --gpus-per-node=1       # num of gpus
+#SBATCH -p g4090_short                                  # 1. Change to your partition
+
+source ~/.bashrc
 
 CONFIG_FILES=(
-    "config.py"
+    "config.py"                                         # 2. Change to your config file path
     )
 
 for CONFIG in "${CONFIG_FILES[@]}"; do
     echo "Running with config: $CONFIG"
-    srun python train.py $CONFIG
+    srun python ~/project/IMG/code/train.py $CONFIG     # 3. Change to your train.py path
 done
-
-#####################
-slurm_end
