@@ -1,7 +1,7 @@
 # train.py
 
 import sys, os
-sys.path.append(os.getcwd())
+sys.path.insert(0, os.getcwd())
 import torch
 import numpy as np
 from tqdm import tqdm
