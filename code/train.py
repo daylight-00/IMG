@@ -1,5 +1,7 @@
 # train.py
 
+import sys, os
+sys.path.append(os.getcwd())
 import torch
 import numpy as np
 from tqdm import tqdm
@@ -7,8 +9,6 @@ from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, Subset
 import logging
 import time
-import os
-import sys
 import importlib.util
 import argparse
 from dataprovider import DataProvider
