@@ -51,7 +51,8 @@ config = {
         "optimizer_args": {
             "lr"        : 0.01,
             "momentum"  : 0.9,
-        }
+        },
+        "use_scheduler" : False,
     },
     
     "Test": {

@@ -20,7 +20,7 @@ def load_config(config_path):
     spec.loader.exec_module(config_module)
     return config_module.config
 
-def train_model(model, train_loader, val_loader, criterion, optimizer, device, log_file, num_epochs, patience, model_path, regularize=False):
+def train_model(model, train_loader, val_loader, criterion, optimizer, device, log_file, num_epochs, patience, model_path, regularize=False, scheduler=None):
     model.train()
     best_loss = float('inf')
     epochs_no_improve = 0
@@ -59,6 +59,7 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, device, l
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
+                scheduler.step() if scheduler is not None else None
 
                 tepoch.set_postfix(loss=loss.item())
                 epoch_loss += loss.item()
@@ -163,8 +164,27 @@ def main(config_path):
     optimizer = config["Train"]["optimizer"](
         model.parameters(),
         **config["Train"]["optimizer_args"]
-    )
-
+        )
+    num_epochs = config["Train"]["num_epochs"]
+    if config["Train"]["use_scheduler"]:
+        from utils.scheduler import CosineAnnealingWarmUpRestarts
+        optimizer = torch.optim.Adam(model.parameters(), lr = 0)
+        total_training_steps    = num_epochs*len(train_loader)
+        cycle_len               = total_training_steps//10
+        warmup_steps            = cycle_len//10
+        scheduler = CosineAnnealingWarmUpRestarts(
+            optimizer,
+            T_0     = cycle_len,    # cycle length
+            T_mult  = 1,            # cycle length multiplier after each cycle.
+            T_up    = warmup_steps, # warmup length
+            eta_max = 0.1,          # max learning rate
+            gamma   = 0.8           # max learning rate decay
+            )
+        print(f"Scheduling with cycle length {cycle_len} and warmup steps {warmup_steps}")
+        print("Optimizer is changed to Adam with lr=0 due to scheduler.")
+    else:
+        scheduler = None
+        
     # Start training
     train_model(
         model           = model,
@@ -174,10 +194,11 @@ def main(config_path):
         optimizer       = optimizer,
         device          = device,
         log_file        = config["log_file"],
-        num_epochs      = config["Train"]["num_epochs"],
+        num_epochs      = num_epochs,
         patience        = config["Train"]["patience"],
         regularize      = config["Train"]["regularize"],
-        model_path      = os.path.join(config["chkp_path"], config["chkp_name"])
+        model_path      = os.path.join(config["chkp_path"], config["chkp_name"]),
+        scheduler       = scheduler
         )
 
 if __name__ == "__main__":
