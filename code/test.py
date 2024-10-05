@@ -1,12 +1,12 @@
 # test.py
 
+import sys, os
+sys.path.insert(0, os.getcwd())
 import torch
 import torch.nn.functional as F
 from sklearn.metrics import roc_curve, auc
 import matplotlib.pyplot as plt
 import numpy as np
-import os
-import sys
 import importlib.util
 import argparse
 from dataprovider import DataProvider

@@ -1,4 +1,6 @@
 # %%
+import sys, os
+sys.path.insert(0, os.getcwd())
 import matplotlib.pyplot as plt
 import importlib.util
 import argparse
