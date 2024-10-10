@@ -12,6 +12,17 @@ import time
 import importlib.util
 import argparse
 from dataprovider import DataProvider
+import random
+
+def set_seed(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
 
 def load_config(config_path):
     """Dynamically import the config file."""
@@ -118,7 +129,8 @@ Val Loss: {avg_val_loss:.5f}'\
 def main(config_path):
     # Load configuration
     config = load_config(config_path)
-
+    set_seed(config["seed"])
+    
     # Create DataProvider instance
     data_provider = DataProvider(
         epi_path=config["Data"]["epi_path"],

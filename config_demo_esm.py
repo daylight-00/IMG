@@ -8,6 +8,7 @@ config = {
     "chkp_path"         : "models",
     "log_file"          : "train.log",
     "plot_path"         : "plots",
+    "seed"              : 100,
 
     "model"             : model.ESM_Blosum_Base,
     "model_args"        : {
