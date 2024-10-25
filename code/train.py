@@ -6,13 +6,15 @@ import torch
 import numpy as np
 from tqdm import tqdm
 from sklearn.model_selection import train_test_split
-from torch.utils.data import DataLoader, Subset
+from torch.utils.data import DataLoader, Subset, Dataset
 import logging
 import time
 import importlib.util
 import argparse
 from dataprovider import DataProvider
 import random
+import pandas as pd
+from sklearn.preprocessing import StandardScaler
 
 def set_seed(seed):
     random.seed(seed)
@@ -31,6 +33,17 @@ def load_config(config_path):
     spec.loader.exec_module(config_module)
     return config_module.config
 
+class SequenceDataset(Dataset):
+    def __init__(self, X, y):
+        self.X = torch.tensor(X, dtype=torch.float32)
+        self.y = torch.tensor(y, dtype=torch.float32)
+
+    def __len__(self):
+        return len(self.X)
+
+    def __getitem__(self, idx):
+        return self.X[idx].unsqueeze(0), self.y[idx]  # (channels, length) 형태로 변환
+    
 def train_model(model, train_loader, val_loader, criterion, optimizer, device, log_file, num_epochs, patience, model_path, regularize=False, scheduler=None):
     model.train()
     best_loss = float('inf')
@@ -131,86 +144,114 @@ def main(config_path):
     config = load_config(config_path)
     set_seed(config["seed"])
     
-    # Create DataProvider instance
-    data_provider = DataProvider(
-        epi_path=config["Data"]["epi_path"],
-        epi_args=config["Data"]["epi_args"],
-        hla_path=config["Data"]["hla_path"],
-        hla_args=config["Data"]["hla_args"],
-    )
-    print(f"Total samples: {len(data_provider)}")
+    if 'epi_path' in config["Data"] and 'hla_path' in config["Data"]:
+        # Create DataProvider instance
+        data_provider = DataProvider(
+            epi_path=config["Data"]["epi_path"],
+            epi_args=config["Data"]["epi_args"],
+            hla_path=config["Data"]["hla_path"],
+            hla_args=config["Data"]["hla_args"],
+        )
+        print(f"Total samples: {len(data_provider)}")
+        
+        # Extract targets for stratified splitting
+        y = np.array([data_provider.samples[i][2] for i in range(len(data_provider))])
+        
+        # Split indices into training and validation sets
+        train_indices, val_indices = train_test_split(
+            np.arange(len(data_provider)),
+            stratify=y,
+            test_size=config["Data"]["val_size"],
+            random_state=42
+        )
 
-    # Extract targets for stratified splitting
-    y = np.array([data_provider.samples[i][2] for i in range(len(data_provider))])
+        # Create EncodedDataset instances
+        full_dataset = config["encoder"](data_provider, **config["encoder_args"])
 
-    # Split indices into training and validation sets
-    train_indices, val_indices = train_test_split(
-        np.arange(len(data_provider)),
-        stratify=y,
-        test_size=config["Data"]["val_size"],
-        random_state=42
-    )
+        # Create subsets for training and validation
+        train_dataset = Subset(full_dataset, train_indices)
+        val_dataset = Subset(full_dataset, val_indices)
+        print(f"Samples in train set: {len(train_dataset)}")
+        print(f"Samples in validation set: {len(val_dataset)}")
 
-    # Create EncodedDataset instances
-    full_dataset = config["encoder"](data_provider, **config["encoder_args"])
+        # Create DataLoaders with multiple workers for parallel data loading
+        batch_size = config["Train"]["batch_size"]
+        num_workers = config["Data"]["num_workers"]
+        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+        val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
 
-    # Create subsets for training and validation
-    train_dataset = Subset(full_dataset, train_indices)
-    val_dataset = Subset(full_dataset, val_indices)
-    print(f"Samples in train set: {len(train_dataset)}")
-    print(f"Samples in validation set: {len(val_dataset)}")
-
-    # Create DataLoaders with multiple workers for parallel data loading
-    batch_size = config["Train"]["batch_size"]
-    num_workers = config["Data"]["num_workers"]
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
-
-    # Initialize model, criterion, optimizer, etc.
+    # 모델 초기화
     model = config["model"](**config["model_args"])
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
     print(f'Model loaded on {device}')
 
+    # 손실 함수와 옵티마이저 설정
     criterion = config["Train"]["criterion"]()
     optimizer = config["Train"]["optimizer"](
         model.parameters(),
         **config["Train"]["optimizer_args"]
-        )
+    )
+    
+    # 학습률 스케줄러 사용 여부 확인
     num_epochs = config["Train"]["num_epochs"]
-    if config["Train"]["use_scheduler"]:
-        from utils.scheduler import CosineAnnealingWarmUpRestarts
-        optimizer = torch.optim.Adam(model.parameters(), lr = 0)
-        total_training_steps    = num_epochs*len(train_loader)
-        cycle_len               = total_training_steps//10
-        warmup_steps            = cycle_len//10
-        scheduler = CosineAnnealingWarmUpRestarts(
-            optimizer,
-            T_0     = cycle_len,    # cycle length
-            T_mult  = 1,            # cycle length multiplier after each cycle.
-            T_up    = warmup_steps, # warmup length
-            eta_max = 0.1,          # max learning rate
-            gamma   = 0.8           # max learning rate decay
-            )
-        print(f"Scheduling with cycle length {cycle_len} and warmup steps {warmup_steps}")
-        print("Optimizer is changed to Adam with lr=0 due to scheduler.")
-    else:
-        scheduler = None
-        
-    # Start training
-    train_model(
-        model           = model,
-        train_loader    = train_loader,
-        val_loader      = val_loader,
-        criterion       = criterion,
-        optimizer       = optimizer,
-        device          = device,
-        log_file        = config["log_file"],
-        num_epochs      = num_epochs,
-        patience        = config["Train"]["patience"],
-        regularize      = config["Train"]["regularize"],
-        model_path      = os.path.join(config["chkp_path"], config["chkp_name"]),
-        scheduler       = scheduler
+    scheduler = None
+
+    # Start training for the original data
+    if 'train_loader' in locals():  # 기존 데이터셋을 로드한 경우에만 train_model 실행
+        train_model(
+            model=model,
+            train_loader=train_loader,
+            val_loader=val_loader,
+            criterion=criterion,
+            optimizer=optimizer,
+            device=device,
+            log_file=config["log_file"],
+            num_epochs=num_epochs,
+            patience=config["Train"]["patience"],
+            regularize=config["Train"]["regularize"],
+            model_path=os.path.join(config["chkp_path"], config["chkp_name"]),
+            scheduler=scheduler
+        )
+
+    if 'hla_embedding_path' in config["Data"] and 'epitope_embedding_path' in config["Data"]:
+
+        # HLA 및 Epitope 임베딩 로드
+        hla_embeddings = np.load(config["Data"]["hla_embedding_path"], allow_pickle=True)
+        epitope_embeddings = np.load(config["Data"]["epitope_embedding_path"], allow_pickle=True)
+
+        # 메타데이터 로드 (타겟 값만 사용)
+        meta_data = pd.read_csv(config["Data"]["meta_data_path"])
+        targets = meta_data['target'].values.astype(np.float32)
+
+        # HLA와 Epitope 임베딩을 선형 결합 (단순히 합친다)
+        combined_embeddings = np.hstack((hla_embeddings, epitope_embeddings))
+
+        # 데이터 표준화
+        scaler = StandardScaler()
+        combined_embeddings = scaler.fit_transform(combined_embeddings)
+
+        # 데이터 분할
+        X_train, X_valid, y_train, y_valid = train_test_split(combined_embeddings, targets, test_size=config["Data"]["val_size"], random_state=42)
+
+        # Dataset 및 DataLoader 준비
+        new_train_loader = DataLoader(SequenceDataset(X_train, y_train), batch_size=config["Train"]["batch_size"], shuffle=True)
+        new_valid_loader = DataLoader(SequenceDataset(X_valid, y_valid), batch_size=config["Train"]["batch_size"], shuffle=False)
+
+        # 새로운 데이터로 학습 시작
+        train_model(
+            model=model,
+            train_loader=new_train_loader,
+            val_loader=new_valid_loader,
+            criterion=criterion,
+            optimizer=optimizer,
+            device=device,
+            log_file=config["log_file"],
+            num_epochs=num_epochs,
+            patience=config["Train"]["patience"],
+            regularize=config["Train"]["regularize"],
+            model_path=os.path.join(config["chkp_path"], config["chkp_name"]),
+            scheduler=scheduler
         )
 
 if __name__ == "__main__":

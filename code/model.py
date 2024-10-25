@@ -147,3 +147,31 @@ class ESM_Blosum_Base(nn.Module):
         output = torch.sigmoid(self.output_layer(attn_output))
 
         return output
+    
+
+class BasicTransformerBinaryClassifier(nn.Module):
+    def __init__(self, input_dim=2560, num_heads=4, num_layers=2, hidden_dim=512):
+        super(BasicTransformerBinaryClassifier, self).__init__()
+        self.encoder_layer = nn.TransformerEncoderLayer(
+            d_model=input_dim, nhead=num_heads, dim_feedforward=hidden_dim, batch_first=True
+        )
+        self.transformer_encoder = nn.TransformerEncoder(self.encoder_layer, num_layers=num_layers)
+        self.classifier = nn.Sequential(
+            nn.Linear(input_dim, hidden_dim),  # 첫 번째 Linear Layer
+            nn.BatchNorm1d(hidden_dim),        # Batch Normalization
+            nn.ReLU(),                         # ReLU 활성화 함수
+            nn.Dropout(0.5),                   # 50% 드롭아웃
+    
+            nn.Linear(hidden_dim, hidden_dim // 2),  # 추가된 히든 레이어
+            nn.BatchNorm1d(hidden_dim // 2),         # Batch Normalization
+            nn.LeakyReLU(0.1),                       # LeakyReLU 활성화 함수
+            nn.Dropout(0.5),                         # 50% 드롭아웃
+    
+            nn.Linear(hidden_dim // 2, 1),  # 출력 레이어
+            nn.Sigmoid()                    # Sigmoid 활성화 함수
+        )
+
+    def forward(self, x):
+        x = self.transformer_encoder(x)  # 트랜스포머 인코더 통과
+        x = x[:, 0, :]  # 첫 번째 위치의 출력을 사용하여 이진 분류
+        return self.classifier(x).squeeze()
