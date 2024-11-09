@@ -13,13 +13,14 @@ config = {
     "model"             : model.Cross_Attn_Demo,
     "model_args"        : {
         "hla_dim"       : 1536,
-        "epi_dim"       : 25,
+        "epi_dim"       : 1536,
         "hla_nhead"     : 8,
-        "epi_nhead"     : 5,
+        "epi_nhead"     : 8,
     },
-    "encoder"           : encoder.plm_blosum,
+    "encoder"           : encoder.plm_plm,
     "encoder_args"      : {
-        "emb_path"      : "/home/public/emb-hla1-esm3-pad-1105.h5",
+        "emb_path_1"      : "/home/public/emb-hla1-esm3-pad-1105.h5",
+        "emb_path_2"      : "/home/public/emb-epi-esm3-deepneo-1105.h5",
     },
 
     "Data": {

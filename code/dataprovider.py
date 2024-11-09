@@ -35,7 +35,7 @@ class DataProvider(Dataset):
 
         df_hla = pd.read_csv(self.hla_path, sep=seperator)
         df_hla = df_hla.dropna()
-        df_hla[hla_header] = df_hla[hla_header].apply(self.normalize_hla_name)
+        # df_hla[hla_header] = df_hla[hla_header].apply(self.normalize_hla_name)
         hla_seq_map = dict(zip(df_hla[hla_header], df_hla[seq_header]))
         print(f'Number of HLA alleles: {len(hla_seq_map)}') if self.specific_hla is None else None
         return hla_seq_map
@@ -48,7 +48,7 @@ class DataProvider(Dataset):
 
         df_epi = pd.read_csv(self.epi_path, sep=seperator)
         df_epi = df_epi.dropna()
-        df_epi[hla_header] = df_epi[hla_header].apply(self.normalize_hla_name)
+        # df_epi[hla_header] = df_epi[hla_header].apply(self.normalize_hla_name)
         df_epi = df_epi[df_epi[hla_header].isin(self.hla_seq_map)]
         
         self.top_10_hlas = df_epi['HLA_Name'].value_counts().nlargest(10).index.tolist()

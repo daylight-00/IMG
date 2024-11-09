@@ -99,7 +99,7 @@ def blosum62_encode(epitope, blosum62):
         encoded = [[0] * len(blosum62['A'])] * len(epitope)
     return torch.tensor(encoded, dtype=torch.float32)
 
-class esm_blosum(Dataset):
+class plm_blosum(Dataset):
     def __init__(self, data_provider, emb_path):
         self.data_provider = data_provider
         self.hdf5_path = emb_path
@@ -108,18 +108,34 @@ class esm_blosum(Dataset):
         return len(self.data_provider)
 
     def __getitem__(self, idx):
-        # Access the data sample
         hla_name, epi_seq, target, hla_seq = self.data_provider[idx]
         
-        # Load the specific HLA embedding from the HDF5 file
         with h5py.File(self.hdf5_path, 'r') as hla_embeddings:
-            embedding = hla_embeddings[hla_name][()]  # Load the embedding corresponding to the HLA name
+            embedding = hla_embeddings[hla_name][()]
             hla_embedding = torch.tensor(embedding, dtype=torch.float32)
-
-        # Encode the epitope sequence using BLOSUM62
         epi_encoding = blosum62_encode(epi_seq, blosum62)
-        
-        # Convert target to a tensor
         target = torch.tensor(target, dtype=torch.float32).unsqueeze(0)
         
         return hla_embedding, epi_encoding, target
+    
+class plm_plm(Dataset):
+    def __init__(self, data_provider, emb_path_1, emb_path_2):
+        self.data_provider = data_provider
+        self.hdf5_path_1 = emb_path_1
+        self.hdf5_path_2 = emb_path_2
+
+    def __len__(self):
+        return len(self.data_provider)
+
+    def __getitem__(self, idx):
+        hla_name, epi_seq, target, hla_seq = self.data_provider[idx]
+        
+        with h5py.File(self.hdf5_path_1, 'r') as hla_embeddings:
+            embedding = hla_embeddings[hla_name][()]
+            hla_embedding = torch.tensor(embedding, dtype=torch.float32)
+        with h5py.File(self.hdf5_path_2, 'r') as epi_embeddings:
+            embedding = epi_embeddings[epi_seq][()]
+            epi_embedding = torch.tensor(embedding, dtype=torch.float32)
+        target = torch.tensor(target, dtype=torch.float32).unsqueeze(0)
+        
+        return hla_embedding, epi_embedding, target
