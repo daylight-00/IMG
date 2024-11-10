@@ -111,7 +111,8 @@ Val Acc: {val_acc:.5f}, \
 Train Loss: {avg_train_loss:.5f}, \
 Val Loss: {avg_val_loss:.5f}'\
 )
-        torch.save(model.state_dict(), f"{model_path}-epoch_{epoch+1}.pt")
+        if (epoch+1 >= 30 ) and (epoch+1 % 5 == 0):
+            torch.save(model.state_dict(), f"{model_path}-epoch_{epoch+1}.pt")
         
         # Early stopping and best model saving
         if avg_val_loss < best_loss:
