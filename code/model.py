@@ -126,8 +126,41 @@ class Cross_Attn_Demo(nn.Module):
         x = torch.sigmoid(self.output_layer(x))
         return x
     
-    def find_optimal_nhead(concat_dim):
+    def find_optimal_nhead(self, concat_dim):
         for nhead in range(10, 0, -1):
             if concat_dim % nhead == 0:
                 return nhead
         return 1
+    
+#%%
+class Alex_Basic(nn.Module):
+    def __init__(self, hla_dim=1280, epi_dim=1280, num_heads=4, num_layers=2, hidden_dim=512):
+        super(Alex_Basic, self).__init__()
+        input_dim = hla_dim + epi_dim
+        self.encoder_layer = nn.TransformerEncoderLayer(
+            d_model=input_dim, nhead=num_heads, dim_feedforward=hidden_dim, batch_first=True
+        )
+        self.transformer_encoder = nn.TransformerEncoder(self.encoder_layer, num_layers=num_layers)
+        self.classifier = nn.Sequential(
+            nn.Linear(input_dim, hidden_dim),   # 첫 번째 Linear Layer
+            nn.BatchNorm1d(hidden_dim),         # Batch Normalization
+            nn.ReLU(),                          # ReLU 활성화 함수
+            nn.Dropout(0.5),                    # 50% 드롭아웃
+    
+            nn.Linear(hidden_dim, hidden_dim // 2), # 추가된 히든 레이어
+            nn.BatchNorm1d(hidden_dim // 2),        # Batch Normalization
+            nn.LeakyReLU(0.1),                      # LeakyReLU 활성화 함수
+            nn.Dropout(0.5),                        # 50% 드롭아웃
+    
+            nn.Linear(hidden_dim // 2, 1),      # 출력 레이어
+            nn.Sigmoid()                        # Sigmoid 활성화 함수
+        )
+
+    def forward(self, x_hla, x_epi):
+        x_hla = x_hla.mean(dim=-2)               # HLA 시퀀스의 평균값
+        x_epi = x_epi.mean(dim=-2)
+        # print(x_hla.shape, x_epi.shape)
+        x = torch.cat((x_hla, x_epi), dim=-1)   # HLA와 에피토프 시퀀스 연결
+        x = self.transformer_encoder(x)         # 트랜스포머 인코더 통과
+        x = x[:, 0, :]                          # 첫 번째 위치의 출력을 사용하여 이진 분류
+        return self.classifier(x)
