@@ -85,6 +85,7 @@ def main(config_path):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Plot train and validation loss and accuracy over epochs')
-    parser.add_argument('--config', type=str, default='config.py', help='config file path')
+    parser.add_argument("config_path", type=str, help="Path to the config.py file.")
     args = parser.parse_args()
-    main(args.config)
+
+    main(args.config_path)
