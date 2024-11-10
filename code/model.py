@@ -29,7 +29,7 @@ class DeepNeo(nn.Module):
 #%%
 class DeepNeo_2_Custom(nn.Module):
     def __init__(self):
-        super(DeepNeo, self).__init__()
+        super(DeepNeo_2_Custom, self).__init__()
         self.conv1 = nn.Conv2d(in_channels=1, out_channels=50, kernel_size=(8, 133), stride=1)
         self.conv2 = nn.Conv2d(in_channels=50, out_channels=10, kernel_size=(8, 133), stride=1)
         self.fc = nn.Linear(1*5*10, 1)
