@@ -13,5 +13,7 @@ CONFIG_FILES=(
 
 for CONFIG in "${CONFIG_FILES[@]}"; do
     echo "Running with config: $CONFIG"
-    srun python ~/project/IMG/code/train.py $CONFIG     # 3. Change to your train.py path
+    python ~/project/IMG/code/train.py $CONFIG     # 3. Change to your train.py path
+    python ~/project/IMG/code/test.py $CONFIG      # 4. Change to your test.py path
+    python ~/project/IMG/code/utils/loss_plot.py $CONFIG  # 5. Change to your evaluate.py path
 done

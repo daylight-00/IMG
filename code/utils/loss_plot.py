@@ -80,7 +80,7 @@ def main(config_path):
 
     plt.title('Train and Validation Loss and Accuracy Over Epochs')
     plt.grid(True)
-    plt.savefig(save_path, bbox_inches='tight')  # 여백이 잘리지 않도록 저장
+    plt.savefig(save_path, bbox_inches='tight')
     print(f"Loss plot saved as {save_path}")
 
 if __name__ == '__main__':

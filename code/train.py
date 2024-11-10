@@ -121,6 +121,7 @@ Val Loss: {avg_val_loss:.5f}'\
             if not os.path.exists(model_dir):
                 os.makedirs(model_dir)
             torch.save(model.state_dict(), f"{model_path}-best.pt")
+            print(f"Best model updated at epoch {epoch+1}")
             epochs_no_improve = 0
         else:
             epochs_no_improve += 1
