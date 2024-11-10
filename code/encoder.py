@@ -111,7 +111,7 @@ class plm_blosum(Dataset):
         hla_name, epi_seq, target, hla_seq = self.data_provider[idx]
         
         with h5py.File(self.hdf5_path, 'r') as hla_embeddings:
-            embedding = hla_embeddings[hla_name][()]
+            embedding = np.squeeze(hla_embeddings[hla_name][()])
             hla_embedding = torch.tensor(embedding, dtype=torch.float32)
         epi_encoding = blosum62_encode(epi_seq, blosum62)
         target = torch.tensor(target, dtype=torch.float32).unsqueeze(0)
@@ -131,10 +131,10 @@ class plm_plm(Dataset):
         hla_name, epi_seq, target, hla_seq = self.data_provider[idx]
         
         with h5py.File(self.hdf5_path_1, 'r') as hla_embeddings:
-            embedding = hla_embeddings[hla_name][()]
+            embedding = np.squeeze(hla_embeddings[hla_name][()])
             hla_embedding = torch.tensor(embedding, dtype=torch.float32)
         with h5py.File(self.hdf5_path_2, 'r') as epi_embeddings:
-            embedding = epi_embeddings[epi_seq][()]
+            embedding = np.squeeze(epi_embeddings[epi_seq][()])
             epi_embedding = torch.tensor(embedding, dtype=torch.float32)
         target = torch.tensor(target, dtype=torch.float32).unsqueeze(0)
         

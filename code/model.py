@@ -157,10 +157,10 @@ class Alex_Basic(nn.Module):
         )
 
     def forward(self, x_hla, x_epi):
-        x_hla = x_hla.mean(dim=-2)               # HLA 시퀀스의 평균값
+        x_hla = x_hla.mean(dim=-2)              # HLA 시퀀스의 평균값
         x_epi = x_epi.mean(dim=-2)
         # print(x_hla.shape, x_epi.shape)
         x = torch.cat((x_hla, x_epi), dim=-1)   # HLA와 에피토프 시퀀스 연결
         x = self.transformer_encoder(x)         # 트랜스포머 인코더 통과
-        x = x[:, 0, :]                          # 첫 번째 위치의 출력을 사용하여 이진 분류
-        return self.classifier(x)
+        x = self.classifier(x)                  # 분류기 통과
+        return x
