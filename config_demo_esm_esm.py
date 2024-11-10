@@ -4,7 +4,7 @@ import model as model                       # Change here if you have a differen
 import encoder as encoder                   # Change here if you have a different `encoder.py` file
 
 config = {
-    "chkp_name"         : "deepneo",
+    "chkp_name"         : "demo_esm_esm",
     "chkp_path"         : "models",
     "log_file"          : "train.log",
     "plot_path"         : "plots",
@@ -19,25 +19,25 @@ config = {
     },
     "encoder"           : encoder.plm_plm,
     "encoder_args"      : {
-        "emb_path_1"      : "/home/public/emb-hla1-esm3-pad-1105.h5",
-        "emb_path_2"      : "/home/public/emb-epi-esm3-deepneo-1105.h5",
+        "hla_emb_path"  : "/home/public/project/EMB/emb-hla1-esm3-pad-1105.h5",
+        "epi_emb_path"  : "/home/public/project/EMB/emb-epi-esm3-deepneo-1105.h5",
     },
 
     "Data": {
-        "epi_path"      : "data/deepneo/mhc1.trainset.csv",
+        "epi_path"      : "/home/public/project/IMG/data/deepneo/mhc1.trainset.csv",
         "epi_args"      : {
             "epi_header": 'Epi_Seq',
             "hla_header": 'HLA_Name',
             "tgt_header": 'Target',
             "seperator" : ",",
         },
-        "hla_path"      : "data/deepneo/HLAseq.csv",
+        "hla_path"      : "/home/public/project/IMG/data/deepneo/HLAseq_unique.csv",
         "hla_args"      : {
             "hla_header": 'HLA_Name',
             "seq_header": 'HLA_Seq',
             "seperator" : ",",
         },
-        "test_path"     : "data/deepneo/mhc1.testset.csv",
+        "test_path"     : "/home/public/project/IMG/data/deepneo/mhc1.testset.csv",
         "test_args"     : {
             "epi_header": 'Epi_Seq',
             "hla_header": 'HLA_Name',

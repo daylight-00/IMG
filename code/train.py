@@ -196,7 +196,7 @@ def main(config_path):
         print("Optimizer is changed to Adam with lr=0 due to scheduler.")
     else:
         scheduler = None
-        
+    os.makedirs(config["chkp_path"], exist_ok=True)
     # Start training
     train_model(
         model           = model,

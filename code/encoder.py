@@ -100,9 +100,9 @@ def blosum62_encode(epitope, blosum62):
     return torch.tensor(encoded, dtype=torch.float32)
 
 class plm_blosum(Dataset):
-    def __init__(self, data_provider, emb_path):
+    def __init__(self, data_provider, hla_emb_path):
         self.data_provider = data_provider
-        self.hdf5_path = emb_path
+        self.hdf5_path = hla_emb_path
 
     def __len__(self):
         return len(self.data_provider)
@@ -119,10 +119,10 @@ class plm_blosum(Dataset):
         return hla_embedding, epi_encoding, target
     
 class plm_plm(Dataset):
-    def __init__(self, data_provider, emb_path_1, emb_path_2):
+    def __init__(self, data_provider, hla_emb_path, epi_emb_path):
         self.data_provider = data_provider
-        self.hdf5_path_1 = emb_path_1
-        self.hdf5_path_2 = emb_path_2
+        self.hdf5_path_1 = hla_emb_path
+        self.hdf5_path_2 = epi_emb_path
 
     def __len__(self):
         return len(self.data_provider)
