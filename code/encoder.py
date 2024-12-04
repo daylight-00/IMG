@@ -60,6 +60,32 @@ class deepneo(Dataset):
         target = torch.tensor(target, dtype=torch.float32).unsqueeze(0)
         return encoded_matrix, target
 
+def deepneo2_single_data(data):
+    hla_name, epi_seq, target, hla_seq = data
+    encoded_matrix = np.zeros((15, 269))
+    for i, epi_aa in enumerate(epi_seq):
+        for j, hla_aa in enumerate(hla_seq):
+            if epi_aa == "*" or hla_aa == "*":
+                encoded_matrix[i, j] = 0
+            else:
+                encoded_matrix[i, j] = impact_matrix[aa_to_index[epi_aa], aa_to_index[hla_aa]]
+    return encoded_matrix, target
+
+class deepneo_2(Dataset):
+    def __init__(self, data_provider):
+        self.data_provider = data_provider
+
+    def __len__(self):
+        return len(self.data_provider)
+
+    def __getitem__(self, idx):
+        data = self.data_provider[idx]  # hla_name, epi_seq, target, hla_seq
+        encoded_matrix, target = deepneo2_single_data(data)
+        # Convert to tensors
+        encoded_matrix = torch.tensor(encoded_matrix, dtype=torch.float32).unsqueeze(0)
+        target = torch.tensor(target, dtype=torch.float32).unsqueeze(0)
+        return encoded_matrix, target
+
 #%% ESM
 blosum62 = {
     'A': [4, -1, -2, -2, 0, -1, -1, 0, -2, -1, -1, -1, -1, -2, -1, 1, 0, -3, -2, 0, -2, -1, -1, -1, -4],
