@@ -34,13 +34,23 @@ aa_to_index = {aa: i for i, aa in enumerate("LFIMVWCYHATGPRQSNEDK")}
 # encoder.py
 
 
-def deepneo_single_data(data):
+def deepneo_single_data(data, matrix_size=(9, 369)):
     hla_name, epi_seq, target, hla_seq = data
-    encoded_matrix = np.zeros((9, 369))
+    encoded_matrix = np.zeros(matrix_size)
     for i, epi_aa in enumerate(epi_seq):
         for j, hla_aa in enumerate(hla_seq):
             if epi_aa == "*" or hla_aa == "*":
                 encoded_matrix[i, j] = 0
+            elif epi_aa == "X" or hla_aa == "X":
+                encoded_matrix[i, j] = 0
+            elif epi_aa == "U":
+                encoded_matrix[i, j] = impact_matrix[aa_to_index["C"], aa_to_index[hla_aa]]
+            elif epi_aa == "J":
+                encoded_matrix[i, j] = max(impact_matrix[aa_to_index["L"], aa_to_index[hla_aa]], impact_matrix[aa_to_index["I"], aa_to_index[hla_aa]])
+            elif epi_aa == "Z":
+                encoded_matrix[i, j] = max(impact_matrix[aa_to_index["Q"], aa_to_index[hla_aa]], impact_matrix[aa_to_index["E"], aa_to_index[hla_aa]])
+            elif epi_aa == "B":
+                encoded_matrix[i, j] = max(impact_matrix[aa_to_index["D"], aa_to_index[hla_aa]], impact_matrix[aa_to_index["N"], aa_to_index[hla_aa]])
             else:
                 encoded_matrix[i, j] = impact_matrix[aa_to_index[epi_aa], aa_to_index[hla_aa]]
     return encoded_matrix, target
@@ -54,22 +64,11 @@ class deepneo(Dataset):
 
     def __getitem__(self, idx):
         data = self.data_provider[idx]  # hla_name, epi_seq, target, hla_seq
-        encoded_matrix, target = deepneo_single_data(data)
+        encoded_matrix, target = deepneo_single_data(data, matrix_size=(9, 369))
         # Convert to tensors
         encoded_matrix = torch.tensor(encoded_matrix, dtype=torch.float32).unsqueeze(0)
         target = torch.tensor(target, dtype=torch.float32).unsqueeze(0)
         return encoded_matrix, target
-
-def deepneo2_single_data(data):
-    hla_name, epi_seq, target, hla_seq = data
-    encoded_matrix = np.zeros((15, 269))
-    for i, epi_aa in enumerate(epi_seq):
-        for j, hla_aa in enumerate(hla_seq):
-            if epi_aa == "*" or hla_aa == "*":
-                encoded_matrix[i, j] = 0
-            else:
-                encoded_matrix[i, j] = impact_matrix[aa_to_index[epi_aa], aa_to_index[hla_aa]]
-    return encoded_matrix, target
 
 class deepneo_2(Dataset):
     def __init__(self, data_provider):
@@ -80,7 +79,7 @@ class deepneo_2(Dataset):
 
     def __getitem__(self, idx):
         data = self.data_provider[idx]  # hla_name, epi_seq, target, hla_seq
-        encoded_matrix, target = deepneo2_single_data(data)
+        encoded_matrix, target = deepneo_single_data(data, matrix_size=(15, 269))
         # Convert to tensors
         encoded_matrix = torch.tensor(encoded_matrix, dtype=torch.float32).unsqueeze(0)
         target = torch.tensor(target, dtype=torch.float32).unsqueeze(0)
@@ -109,7 +108,7 @@ blosum62 = {
     'Y': [-2, -2, -2, -3, -2, -1, -2, -3, 2, -1, -1, -2, -1, 3, -3, -2, -2, 2, 7, -1, -3, -1, -2, -1, -4],
     'V': [0, -3, -3, -3, -1, -2, -2, -3, -3, 3, 1, -2, 1, -1, -2, -2, 0, -3, -1, 4, -3, 2, -2, -1, -4],
     'B': [-2, -1, 4, 4, -3, 0, 1, -1, 0, -3, -4, 0, -3, -3, -2, 0, -1, -4, -3, -3, 4, -3, 0, -1, -4],
-        'J': [-2, -3, -3, -1, -2, -3, -4, -3, 3, 3, -3, 2, 0, -3, -2, -1, -2, -1, 2, -3, 3, -3, -1, -4],
+    'J': [-2, -3, -3, -1, -2, -3, -4, -3, 3, 3, -3, 2, 0, -3, -2, -1, -2, -1, 2, -3, 3, -3, -1, -4],
     'Z': [-1, 0, 0, 1, -3, 4, 4, -2, 0, -3, -3, 1, -1, -3, -1, 0, -1, -2, -2, -2, 0, -3, 4, -1, -4],
     'X': [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -4],
     '*': [-4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, 1]
