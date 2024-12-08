@@ -6,6 +6,7 @@ import torch
 import numpy as np
 from tqdm import tqdm
 from sklearn.model_selection import StratifiedKFold
+from iterstrat.ml_stratifiers import MultilabelStratifiedKFold  # 추가
 from torch.utils.data import DataLoader, Subset
 import logging
 import time
@@ -126,7 +127,7 @@ Val Loss: {avg_val_loss:.5f}'\
             epochs_no_improve = 0
         else:
             epochs_no_improve += 1
-            if epochs_no_improve >= patience:
+            if epochs_no_improve >= patience and epoch+1 > 12:
                 early_stop = True
 
 def main(config_path):
@@ -145,10 +146,21 @@ def main(config_path):
 
     # Extract targets for stratified splitting
     y = np.array([data_provider.samples[i][2] for i in range(len(data_provider))])
+    additional_column = np.array([data_provider.samples[i][0] for i in range(len(data_provider))])  # 예: 특정 컬럼
 
-    # Initialize StratifiedKFold
+    # Create a binary or multi-label array for additional stratification
+    # 예를 들어, additional_column이 범주형 변수라고 가정
+    from sklearn.preprocessing import LabelEncoder
+    le = LabelEncoder()
+    additional_encoded = le.fit_transform(additional_column)
+    
+    # Create multi-label stratification
+    # 각 샘플에 대해 [타겟 클래스, 추가 컬럼]
+    stratify_labels = np.vstack((y, additional_encoded)).T  # Shape: (n_samples, 2)
+
+    # Initialize MultilabelStratifiedKFold
     num_folds = config["CrossValidation"]["num_folds"]
-    skf = StratifiedKFold(n_splits=num_folds, shuffle=True, random_state=config["seed"])
+    mskf = MultilabelStratifiedKFold(n_splits=num_folds, shuffle=True, random_state=config["seed"])
 
     # Create EncodedDataset instance once
     full_dataset = config["encoder"](data_provider, **config["encoder_args"])
@@ -158,7 +170,7 @@ def main(config_path):
     # To store metrics for all folds
     fold_metrics = []
 
-    for fold, (train_indices, val_indices) in enumerate(skf.split(np.arange(len(full_dataset)), y)):
+    for fold, (train_indices, val_indices) in enumerate(mskf.split(np.arange(len(full_dataset)), stratify_labels)):
         print(f"\n=== Fold {fold+1}/{num_folds} ===")
 
         # Create subsets for this fold
@@ -226,7 +238,7 @@ def main(config_path):
             )
         
         # After training, evaluate the best model on validation set
-        model.load_state_dict(torch.load(f"{fold_model_path}-best.pt"))
+        model.load_state_dict(torch.load(f"{fold_model_path}-best.pt", weights_only=True))
         model.eval()
         correct_val = 0
         total_val = 0
