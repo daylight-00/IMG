@@ -15,7 +15,9 @@ config = {
     "encoder"           : encoder.deepneo_2,
     "encoder_args"      : {
     },
-
+    "CrossValidation": {
+        "num_folds"     : 5,
+    },
     "Data": {
         "epi_path"      : "/home/public/project/IMG/data/deepneo_2/mhc2.trainset.csv",
         "epi_args"      : {
