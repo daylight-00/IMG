@@ -174,6 +174,25 @@ def main(config_path):
     model.to(device)
     print(f'Model loaded on {device}')
 
+    # If continuing training, load the saved weights
+    if config["Train"].get("transfer", False):
+        model_path = os.path.join(config["chkp_path"], config["chkp_name"] + '-' + config["Train"]["chkp_prefix"] + '.pt')
+        last_checkpoint = model_path
+        if last_checkpoint and os.path.exists(last_checkpoint):
+            model.load_state_dict(torch.load(model_path, weights_only=False))
+            print(f"Loaded model weights from {last_checkpoint}")
+            
+            # # Optionally, load optimizer state if available
+            # if 'optimizer_state_dict' in checkpoint and 'optimizer' in config["Train"]:
+            #     optimizer = config["Train"]["optimizer"](
+            #         model.parameters(),
+            #         **config["Train"]["optimizer_args"]
+            #     )
+            #     optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            #     print(f"Loaded optimizer state from {last_checkpoint}")
+        else:
+            print(f"Checkpoint path {last_checkpoint} is invalid or does not exist. Starting training from scratch.")
+
     criterion = config["Train"]["criterion"]()
     optimizer = config["Train"]["optimizer"](
         model.parameters(),

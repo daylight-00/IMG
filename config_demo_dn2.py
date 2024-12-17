@@ -8,7 +8,7 @@ config = {
     "chkp_path"         : "models",
     "log_file"          : "train.log",
     "plot_path"         : "plots",
-    "seed"              : 100,
+    "seed"              : 128,
     "model"             : model.DeepNeo_2_Custom,
     "model_args"        : {
     },
@@ -19,20 +19,20 @@ config = {
         "num_folds"     : 5,
     },
     "Data": {
-        "epi_path"      : "/home/public/project/IMG/data/deepneo_2/mhc2.trainset.csv",
+        "epi_path"      : "~/project/IMG/data/final/mhc2_full_human_train.csv",
         "epi_args"      : {
             "epi_header": 'Epi_Seq',
             "hla_header": 'HLA_Name',
             "tgt_header": 'Target',
             "seperator" : ",",
         },
-        "hla_path"      : "/home/public/project/IMG/data/deepneo_2/MHC2_prot_alignseq_unique.csv",
+        "hla_path"      : "~/project/IMG/data/final/HLA2_IMGT_light.csv",
         "hla_args"      : {
             "hla_header": 'HLA_Name',
             "seq_header": 'HLA_Seq',
             "seperator" : ",",
         },
-        "test_path"     : "/home/public/project/IMG/data/deepneo_2/mhc2.testset.csv",
+        "test_path"     : "~/project/IMG/data/final/tcell_human_train_set.csv",
         "test_args"     : {
             "epi_header": 'Epi_Seq',
             "hla_header": 'HLA_Name',
@@ -44,21 +44,25 @@ config = {
     },
 
     "Train": {
-        "batch_size"    : 1024,
+        "batch_size"    : 128,
         "num_epochs"    : 100,
         "patience"      : 10,
         "regularize"    : True,            # true if regularize method is implemented in the model
         "criterion"     : nn.BCELoss,
-        "optimizer"     : optim.SGD,
+        "optimizer"     : optim.AdamW,
         "optimizer_args": {
-            "lr"        : 0.01,
-            "momentum"  : 0.9,
+            "lr"        : 1e-5,
+            # "weight_decay"  : 0.01,
         },
         "use_scheduler" : False,
+        "chkp_prefix"   : "best",
+        "transfer"      : True,
     },
     
     "Test": {
         "batch_size"    : 1024,
         "chkp_prefix"   : "best",
+        "feat_path"     : "feat.h5",
+        "target_layer"  : "fc",
     },
 }
