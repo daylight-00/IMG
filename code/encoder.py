@@ -164,3 +164,197 @@ class plm_plm(Dataset):
         target = torch.tensor(target, dtype=torch.float32).unsqueeze(0)
         
         return hla_embedding, epi_embedding, target
+    
+class plm_plm_sp2(Dataset):
+    def __init__(self, data_provider, hla_emb_path_s, hla_emb_path_p, epi_emb_path_s,epi_emb_path_p ):
+        self.data_provider = data_provider
+        self.hdf5_path_s1 = hla_emb_path_s
+        self.hdf5_path_s2 = epi_emb_path_s
+        self.hdf5_path_p1 = hla_emb_path_p
+        self.hdf5_path_p2 = epi_emb_path_p
+
+    def __len__(self):
+        return len(self.data_provider)
+
+    def __getitem__(self, idx):
+
+        hla_name, epi_seq, target, hla_seq = self.data_provider[idx] 
+
+        # Load HLA embeddings
+        try:
+            with h5py.File(self.hdf5_path_s1, 'r') as hla_embeddings:
+                embedding = np.squeeze(hla_embeddings[hla_name][()])
+                hla_embedding = torch.tensor(embedding, dtype=torch.float32)
+            
+        except Exception as e:
+            print(f"Error loading HLA embeddings: {e}")
+
+        with h5py.File(self.hdf5_path_s1, 'r') as hla_embeddings:
+            embedding_s = np.squeeze(hla_embeddings[hla_name][()])
+            hla_embedding_s = torch.tensor(embedding_s, dtype=torch.float32)
+        
+            # Extract the HLA embedding corresponding to the length of hla_seq
+            hla_len = len(hla_seq)
+        
+            # Extract the first `hla_len` entries from the embedding
+            hla_embedding_s = hla_embedding_s[:hla_len]
+
+            # Pad the extracted embedding with zeros to make it 269x384
+            if hla_len < 269:
+                hla_embedding_s = torch.cat([hla_embedding_s, torch.zeros(269 - hla_len, 384)], dim=0)
+            else:
+                hla_embedding_s = hla_embedding_s[:269]
+                
+        with h5py.File(self.hdf5_path_p1, 'r') as hla_embeddings:
+            embedding_p = np.squeeze(hla_embeddings[hla_name][()])
+            hla_embedding_p = torch.tensor(embedding_p, dtype=torch.float32)
+        
+            # Extract the HLA embedding corresponding to the length of hla_seq
+            hla_len = len(hla_seq)
+        
+            # Extract the first `hla_len` entries from the embedding
+            hla_embedding_p = hla_embedding[:hla_len,:hla_len]
+
+            ## 269x269 크기의 0벡터 생성
+            zero_vector = np.zeros((269, 269), dtype=np.float32)
+
+            # (0, 0) 위치부터 hla_embedding을 붙여넣기
+            zero_vector[:hla_len, :hla_len] = hla_embedding_p.numpy()
+
+            hla_embedding_p =  zero_vector
+
+            
+        # Load Epi embeddings
+        with h5py.File(self.hdf5_path_s2, 'r') as epi_embeddings:
+            embedding = np.squeeze(epi_embeddings[epi_seq][()])
+            epi_embedding_s = torch.tensor(embedding, dtype=torch.float32)
+            epi_embedding_s = epi_embedding_s[:15]
+
+        # Load Epi embeddings
+        with h5py.File(self.hdf5_path_p2, 'r') as epi_embeddings:
+            embedding = np.squeeze(epi_embeddings[epi_seq][()])
+            epi_embedding_p = torch.tensor(embedding, dtype=torch.float32)
+            epi_embedding_p = epi_embedding_p[:15, :15]
+            
+
+        target = torch.tensor(target, dtype=torch.float32).unsqueeze(0)
+        
+    
+
+        return hla_embedding_s,hla_embedding_p, epi_embedding_s,  epi_embedding_p, target
+    
+class plm_plm_sp2_IM(Dataset):
+    def __init__(self, data_provider, hla_emb_path_s, hla_emb_path_p, epi_emb_path_s,epi_emb_path_p ):
+        self.data_provider = data_provider
+        self.hdf5_path_s1 = hla_emb_path_s
+        self.hdf5_path_s2 = epi_emb_path_s
+        self.hdf5_path_p1 = hla_emb_path_p
+        self.hdf5_path_p2 = epi_emb_path_p
+
+    def __len__(self):
+        return len(self.data_provider)
+
+    def __getitem__(self, idx):
+
+        hla_name, epi_seq, target, hla_seq = self.data_provider[idx] 
+
+        # Load HLA embeddings
+        try:
+            with h5py.File(self.hdf5_path_s1, 'r') as hla_embeddings:
+                embedding = np.squeeze(hla_embeddings[hla_name][()])
+                hla_embedding = torch.tensor(embedding, dtype=torch.float32)
+            
+        except Exception as e:
+            print(f"Error loading HLA embeddings: {e}")
+
+        with h5py.File(self.hdf5_path_s1, 'r') as hla_embeddings:
+            embedding_s = np.squeeze(hla_embeddings[hla_name][()])
+            hla_embedding_s = torch.tensor(embedding_s, dtype=torch.float32)
+        
+            # Extract the HLA embedding corresponding to the length of hla_seq
+            hla_len = len(hla_seq)
+        
+            # Extract the first `hla_len` entries from the embedding
+            hla_embedding_s = hla_embedding_s[:hla_len]
+
+            # Pad the extracted embedding with zeros to make it 269x384
+            if hla_len < 269:
+                hla_embedding_s = torch.cat([hla_embedding_s, torch.zeros(269 - hla_len, 384)], dim=0)
+            else:
+                hla_embedding_s = hla_embedding_s[:269]
+                
+        with h5py.File(self.hdf5_path_p1, 'r') as hla_embeddings:
+            embedding_p = np.squeeze(hla_embeddings[hla_name][()])
+            hla_embedding_p = torch.tensor(embedding_p, dtype=torch.float32)
+        
+            # Extract the HLA embedding corresponding to the length of hla_seq
+            hla_len = len(hla_seq)
+        
+            # Extract the first `hla_len` entries from the embedding
+            hla_embedding_p = hla_embedding[:hla_len,:hla_len]
+
+            ## 269x269 크기의 0벡터 생성
+            zero_vector = np.zeros((269, 269), dtype=np.float32)
+
+            # (0, 0) 위치부터 hla_embedding을 붙여넣기
+            zero_vector[:hla_len, :hla_len] = hla_embedding_p.numpy()
+
+            hla_embedding_p =  zero_vector
+
+            
+        # Load Epi embeddings
+        with h5py.File(self.hdf5_path_s2, 'r') as epi_embeddings:
+            embedding = np.squeeze(epi_embeddings[epi_seq][()])
+            epi_embedding_s = torch.tensor(embedding, dtype=torch.float32)
+            epi_embedding_s = epi_embedding_s[:15]
+
+        # Load Epi embeddings
+        with h5py.File(self.hdf5_path_p2, 'r') as epi_embeddings:
+            embedding = np.squeeze(epi_embeddings[epi_seq][()])
+            epi_embedding_p = torch.tensor(embedding, dtype=torch.float32)
+            epi_embedding_p = epi_embedding_p[:15, :15]
+        
+        with h5py.File(self.hdf5_path_emb, 'r') as bind_embeddings:
+            key = f"{hla_name}{epi_seq}"
+            embedding = np.squeeze(bind_embeddings[key][()])
+            emb_bind = torch.tensor(embedding, dtype=torch.float32)            
+
+        target = torch.tensor(target, dtype=torch.float32).unsqueeze(0)
+        
+    
+
+        return hla_embedding_s,hla_embedding_p, epi_embedding_s,  epi_embedding_p, emb_bind, target
+
+class plm_blosum(Dataset):
+    def __init__(self, data_provider):
+        self.data_provider = data_provider
+
+    def __len__(self):
+        return len(self.data_provider)
+
+    def __getitem__(self, idx):
+        hla_name, epi_seq, target, hla_seq = self.data_provider[idx]
+        
+        # hla_seq 인코딩 (먼저 BLOSUM62로 인코딩)
+        hla_encoding = blosum62_encode(hla_seq, blosum62)
+        
+        # hla_encoding의 shape: (seq_length, 25)로 가정
+        seq_length = hla_encoding.size(0)  # hla_seq의 실제 길이 (row의 수)
+        target_length = 269  # 원하는 길이 (269 * 25)
+
+        if seq_length < target_length:
+            # 부족한 부분을 0으로 패딩 (패딩 방향은 시퀀스 끝에 추가)
+            padding_size = target_length - seq_length
+            hla_encoding_padded = F.pad(hla_encoding, (0, 0, 0, padding_size))  # (pad_left, pad_right, pad_top, pad_bottom)
+        else:
+            # 길이가 이미 충분하면 자르기
+            hla_encoding_padded = hla_encoding[:target_length]
+
+        # 에피토프 서열 인코딩
+        epi_encoding = blosum62_encode(epi_seq, blosum62)
+        
+        # 타겟 텐서
+        target = torch.tensor(target, dtype=torch.float32).unsqueeze(0)
+        
+        return hla_encoding_padded, epi_encoding, target
+    

@@ -2,6 +2,79 @@ import torch.nn.functional as F
 import torch.nn as nn
 import torch
 
+def find_optimal_nhead(self, concat_dim):
+    for nhead in range(10, 0, -1):
+        if concat_dim % nhead == 0:
+            return nhead
+    return 1
+
+class _simple_self_attn_block(nn.Module):
+    def __init__(self, embed_dim, nhead, dropout):
+        super(_simple_self_attn_block, self).__init__()
+        self.self_attn = nn.MultiheadAttention(embed_dim=embed_dim, num_heads=nhead, dropout=dropout)
+        self.layer_norm = nn.LayerNorm(embed_dim)
+        self.dropout = nn.Dropout(p=dropout)
+
+    def forward(self, x):
+        x = x.permute(1, 0, 2)  # seq_len, batch_size, embed_dim
+        attn_output, _ = self.self_attn(x, x, x)
+        x = attn_output + x  # Residual connection
+        x = self.layer_norm(x)
+        x = self.dropout(x)
+        x = x.permute(1, 0, 2)
+        return x
+
+class _ffn_residual_self_attn_block(nn.Module):
+    def __init__(self, embed_dim, num_heads, dropout=0.1):
+        super(_ffn_residual_self_attn_block, self).__init__()
+        self.multihead_attn = nn.MultiheadAttention(embed_dim, num_heads, dropout=dropout)
+        self.ffn = nn.Sequential(
+            nn.Linear(embed_dim, embed_dim * 4),
+            nn.ReLU(),
+            nn.Linear(embed_dim * 4, embed_dim)
+        )
+        self.layer_norm1 = nn.LayerNorm(embed_dim)
+        self.layer_norm2 = nn.LayerNorm(embed_dim)
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, x):
+        x = x.permute(1, 0, 2)  # (seq_len, batch_size, embed_dim)
+        attn_output, _ = self.multihead_attn(x, x, x)
+        x = self.layer_norm1(x + self.dropout(attn_output))
+        
+        ffn_output = self.ffn(x)    
+        x = self.layer_norm2(x + self.dropout(ffn_output))
+        x = x.permute(1, 0, 2)  # (batch_size, seq_len, embed_dim)
+        return x
+    
+class simple_self_attn(nn.Module):
+    def __init__(self, embed_dim, num_heads, dropout=0.1, n_blocks=1):
+        super(simple_self_attn, self).__init__()
+        self.blocks = nn.ModuleList([
+            _ffn_residual_self_attn_block(embed_dim, num_heads, dropout) for _ in range(n_blocks)
+        ])
+    def forward(self, x):
+        for block in self.blocks:
+            x = block(x)
+        return x
+
+class simple_cross_attn(nn.Module):
+    def __init__(self, embed_dim, nhead, dropout):
+        super(simple_cross_attn, self).__init__()
+        self.cross_attn = nn.MultiheadAttention(embed_dim=embed_dim, num_heads=nhead, dropout=dropout)
+        self.layer_norm = nn.LayerNorm(embed_dim)
+        self.dropout = nn.Dropout(p=dropout)
+
+    def forward(self, x1, x2):
+        x1 = x1.permute(1, 0, 2)  # seq_len, batch_size, embed_dim
+        x2 = x2.permute(1, 0, 2)
+        attn_output, _ = self.cross_attn(x1, x2, x2)
+        x1 = attn_output + x1  # Residual connection
+        x1 = self.layer_norm(x1)
+        x1 = self.dropout(x1)
+        x1 = x1.permute(1, 0, 2)
+        return x1
+
 #%%
 class DeepNeo(nn.Module):
     def __init__(self):
@@ -169,4 +242,86 @@ class Alex_Basic(nn.Module):
         x = torch.cat((x_hla, x_epi), dim=-1)   # HLA와 에피토프 시퀀스 연결
         x = self.transformer_encoder(x)         # 트랜스포머 인코더 통과
         x = self.classifier(x)                  # 분류기 통과
+        return x
+    
+class cat2_alpha_sp(nn.Module):
+    def __init__(
+            self, 
+            hla_dim_s=384, epi_dim_s=384, hla_dim_p=384, epi_dim_p=384, hla_nhead_s=8, 
+            epi_nhead_s=5, hla_nhead_p=8, epi_nhead_p=5, d_model=128, dropout=0.2,
+            hla_blocks=2, epi_blocks=2, con_blocks=2
+        ):
+        super(cat2_alpha_sp, self).__init__()
+        self.hla_linear = nn.Linear(hla_dim_s+hla_dim_p, 512)
+        self.epi_linear = nn.Linear(epi_dim_s+epi_dim_p, 512)
+        
+        self.epi_self_attn = simple_self_attn(embed_dim=512, num_heads=16, n_blocks=epi_blocks, dropout=dropout)
+        self.hla_self_attn = simple_self_attn(embed_dim=512, num_heads=16, n_blocks=hla_blocks, dropout=dropout)
+        
+        concat_dim= 1024
+        nhead = 16
+
+        self.self_attn = simple_self_attn(embed_dim=1024, num_heads=nhead, n_blocks=con_blocks, dropout=dropout)
+        self.output_layer = nn.Linear(concat_dim, 1)
+
+    def forward(self, x_hla_s, x_hla_p, x_epi_s , x_epi_p):
+        # HLA self-attention
+        x_hla = torch.cat([x_hla_s, x_hla_p], dim=-1) # (batch, hla_len, emb_dim)
+        x_hla = self.hla_linear(x_hla)
+        x_hla = self.hla_self_attn(x_hla)
+        x_hla = x_hla.mean(dim=1)
+        x_hla = x_hla.unsqueeze(0)
+
+        x_epi = torch.cat([x_epi_s, x_epi_p], dim=-1)   # (batch, epi_len, emb_dim)
+        x_epi = self.epi_linear(x_epi)
+        x_epi = self.epi_self_attn(x_epi)
+        x_epi = x_epi.mean(dim=1)
+        x_epi = x_epi.unsqueeze(0)
+        
+        x = torch.cat((x_hla, x_epi), dim=-1)    # (1, batch_size, concat_dim)
+        x = self.self_attn(x)
+        x = x.squeeze(0)
+
+        x = self.output_layer(x)
+        return x
+
+class IM_alpha_sp(nn.Module):
+    def __init__(
+            self, 
+            hla_dim_s=384, epi_dim_s=384, hla_dim_p=384, epi_dim_p=384, hla_nhead_s=8, dim_bind=1074,
+            epi_nhead_s=5, hla_nhead_p=8, epi_nhead_p=5, d_model=128, dropout=0.2,
+            hla_blocks=2, epi_blocks=2, con_blocks=2
+        ):
+        super(IM_alpha_sp, self).__init__()
+        self.hla_linear = nn.Linear(hla_dim_s+hla_dim_p, 512)
+        self.epi_linear = nn.Linear(epi_dim_s+epi_dim_p, 512)
+        
+        self.epi_self_attn = simple_self_attn(embed_dim=512, num_heads=16, n_blocks=epi_blocks, dropout=dropout)
+        self.hla_self_attn = simple_self_attn(embed_dim=512, num_heads=16, n_blocks=hla_blocks, dropout=dropout)
+        
+        concat_dim= 1024 + dim_bind
+        nhead = 16
+
+        self.self_attn = simple_self_attn(embed_dim=1024, num_heads=nhead, n_blocks=con_blocks, dropout=dropout)
+        self.output_layer = nn.Linear(concat_dim, 1)
+
+    def forward(self, x_hla_s, x_hla_p, x_epi_s , x_epi_p, emb_bind):
+        # HLA self-attention
+        x_hla = torch.cat([x_hla_s, x_hla_p], dim=-1) # (batch, hla_len, emb_dim)
+        x_hla = self.hla_linear(x_hla)
+        x_hla = self.hla_self_attn(x_hla)
+        x_hla = x_hla.mean(dim=1)
+        x_hla = x_hla.unsqueeze(0)
+
+        x_epi = torch.cat([x_epi_s, x_epi_p], dim=-1)   # (batch, epi_len, emb_dim)
+        x_epi = self.epi_linear(x_epi)
+        x_epi = self.epi_self_attn(x_epi)
+        x_epi = x_epi.mean(dim=1)
+        x_epi = x_epi.unsqueeze(0)
+        
+        x = torch.cat((x_hla, x_epi, emb_bind), dim=-1)    # (1, batch_size, concat_dim)
+        x = self.self_attn(x)
+        x = x.squeeze(0)
+
+        x = self.output_layer(x)
         return x
