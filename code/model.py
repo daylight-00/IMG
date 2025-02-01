@@ -325,3 +325,45 @@ class IM_alpha_sp(nn.Module):
 
         x = self.output_layer(x)
         return x
+
+class cat2_alpha_sp_side(nn.Module):
+    def __init__(
+            self, 
+            hla_dim_s=384, epi_dim_s=384, hla_dim_p=384, epi_dim_p=384, 
+            # hla_nhead_s=8, epi_nhead_s=5, hla_nhead_p=8, epi_nhead_p=5, d_model=128, 
+            dropout=0.2, hla_blocks=2, epi_blocks=2, con_blocks=2
+        ):
+        super(cat2_alpha_sp_side, self).__init__()
+        hla_dim = hla_dim_s + hla_dim_p # 640
+        epi_dim = epi_dim_s + epi_dim_p # 640
+        
+        nhead = hla_dim // 64
+
+        self.epi_self_attn = simple_self_attn(embed_dim=hla_dim, num_heads=nhead, n_blocks=epi_blocks, dropout=dropout)
+        self.hla_self_attn = simple_self_attn(embed_dim=epi_dim, num_heads=nhead, n_blocks=hla_blocks, dropout=dropout)
+        
+        concat_dim = hla_dim
+        nhead = concat_dim // 64
+        self.self_attn = simple_self_attn(embed_dim=concat_dim, num_heads=nhead, n_blocks=con_blocks, dropout=dropout)
+        
+        flat_dim = concat_dim*(15+269)
+        self.fc = nn.Linear(flat_dim, 512)
+        self.output_layer = nn.Sequential(
+            nn.Linear(flat_dim, 512),
+            nn.ReLU(),
+            nn.Linear(512, 1)
+        )
+
+    def forward(self, x_hla_s, x_hla_p, x_epi_s , x_epi_p):
+        x_hla = torch.cat([x_hla_s, x_hla_p], dim=-1) # (batch, hla_len, emb_dim)
+        x_hla = self.hla_self_attn(x_hla)
+
+        x_epi = torch.cat([x_epi_s, x_epi_p], dim=-1)   # (batch, epi_len, emb_dim)
+        x_epi = self.epi_self_attn(x_epi)
+        
+        x = torch.cat((x_hla, x_epi), dim=1)
+        x = self.self_attn(x)
+        
+        x = torch.flatten(x, start_dim=1)
+        x = self.output_layer(x)
+        return x
