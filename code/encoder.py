@@ -71,7 +71,7 @@ def get_blosum_emb(matrix, sequence, max_len):
     return embedding
 
 class blosum_mask(Dataset):
-    def __init__(self, data_provider, hla_emb_path_s, epi_emb_path_s, hla_emb_path_p=None, epi_emb_path_p=None):
+    def __init__(self, data_provider, hla_emb_path_s=None, epi_emb_path_s=None, hla_emb_path_p=None, epi_emb_path_p=None):
         self.data_provider = data_provider
         from utils.matrix import blosum62
         self.blosum62 = blosum62
@@ -84,8 +84,8 @@ class blosum_mask(Dataset):
         # Load embeddings
         hla_emb_s = get_blosum_emb(self.blosum62, hla_seq, 269)
         epi_emb_s = get_blosum_emb(self.blosum62, epi_seq, 15)
-        hla_emb_p = None
-        epi_emb_p = None
+        hla_emb_p = False
+        epi_emb_p = False
         # Create padding masks
         pad_mask_hla = get_padding_mask(hla_seq, 269)
         pad_mask_epi = get_padding_mask(epi_seq, 15)
