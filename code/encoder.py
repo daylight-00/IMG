@@ -55,8 +55,8 @@ class plm_plm_mask(Dataset):
     def __del__(self):
         self.hla_emb_dict_s.close()
         self.epi_emb_dict_s.close()
-        self.hla_emb_dict_p.close()# if self.hla_emb_dict_p is not None else None
-        self.epi_emb_dict_p.close()# if self.epi_emb_dict_p is not None else None
+        self.hla_emb_dict_p.close() if self.hla_emb_dict_p is not None else None
+        self.epi_emb_dict_p.close() if self.epi_emb_dict_p is not None else None
 
 #%% BLOSUM
 def get_blosum_emb(matrix, sequence, max_len):
