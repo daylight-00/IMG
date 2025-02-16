@@ -4,40 +4,48 @@ import model as model                       # Change here if you have a differen
 import encoder as encoder                   # Change here if you have a different `encoder.py` file
 
 config = {
-    "chkp_name"         : "demo_esm_esm",
+    "chkp_name"         : "af3",
     "chkp_path"         : "models",
     "log_file"          : "train.log",
     "plot_path"         : "plots",
-    "seed"              : 100,
+    "seed"              : 128,
 
-    "model"             : model.Cross_Attn_Demo,
+    "model"             : model.plm_cat_mean,
     "model_args"        : {
-        "hla_dim"       : 1536,
-        "epi_dim"       : 1536,
-        "hla_nhead"     : 8,
-        "epi_nhead"     : 8,
+        "hla_dim_s"       : 384,
+        "hla_dim_p"       : 256,
+        "epi_dim_s"       : 384,
+        "epi_dim_p"       : 256,
+        "head_div"        : 64,
     },
-    "encoder"           : encoder.plm_plm,
+
+    "encoder"           : encoder.plm_plm_mask,
     "encoder_args"      : {
-        "hla_emb_path"  : "/home/public/project/EMB/emb-hla1-esm3-pad-1105.h5",
-        "epi_emb_path"  : "/home/public/project/EMB/emb-epi-esm3-deepneo-1105.h5",
+        "hla_emb_path_s" : "/home/alpha/project/EMB/emb_hla2_af3_single_light_0127.h5",
+        "epi_emb_path_s" : "/home/alpha/project/EMB/emb_epi_af3_single_0127.h5",
+        "hla_emb_path_p" : "/home/alpha/project/EMB/side/emb_hla2_af3_pair_light_0127_side.h5",
+        "epi_emb_path_p" : "/home/alpha/project/EMB/side/emb_epi_af3_pair_0127_side.h5",
+    },
+    "CrossValidation": {
+        "num_folds"     : 5,
     },
 
     "Data": {
-        "epi_path"      : "/home/public/project/IMG/data/deepneo/mhc1.trainset.csv",
+        "epi_path"      : "/home/alpha/project/IMG/data/final/mhc2_full_human_train.csv",
         "epi_args"      : {
             "epi_header": 'Epi_Seq',
             "hla_header": 'HLA_Name',
             "tgt_header": 'Target',
             "seperator" : ",",
         },
-        "hla_path"      : "/home/public/project/IMG/data/deepneo/HLAseq_unique.csv",
+        "hla_path"      : "/home/alpha/project/IMG/data/imgt_msa/HLA2_IMGT_MSA_light_clean.csv",
+        
         "hla_args"      : {
             "hla_header": 'HLA_Name',
             "seq_header": 'HLA_Seq',
             "seperator" : ",",
         },
-        "test_path"     : "/home/public/project/IMG/data/deepneo/mhc1.testset.csv",
+        "test_path"     : "/home/alpha/project/IMG/data/final/mhc2_full_human_test.csv",
         "test_args"     : {
             "epi_header": 'Epi_Seq',
             "hla_header": 'HLA_Name',
@@ -49,15 +57,14 @@ config = {
     },
 
     "Train": {
-        "batch_size"    : 64,
+        "batch_size"    : 128,
         "num_epochs"    : 100,
         "patience"      : 10,
         "regularize"    : False,            # true if regularize method is implemented in the model
-        "criterion"     : nn.BCELoss,
-        "optimizer"     : optim.SGD,
+        "criterion"     : nn.BCEWithLogitsLoss,
+        "optimizer"     : optim.AdamW,
         "optimizer_args": {
-            "lr"        : 0.01,
-            "momentum"  : 0.9,
+            "lr"        : 1e-4,
         },
         "use_scheduler" : False,
     },
@@ -65,5 +72,10 @@ config = {
     "Test": {
         "batch_size"    : 64,
         "chkp_prefix"   : "best",
+        "plot"          : True,
+        "feat_extract"  : False,
+        "feat_path"     : "feat_extract",
+        "target_layer"  : "output_layer",
+        "save_pred"     : False,
     },
 }

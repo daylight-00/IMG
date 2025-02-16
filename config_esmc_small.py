@@ -4,51 +4,48 @@ import model as model                       # Change here if you have a differen
 import encoder as encoder                   # Change here if you have a different `encoder.py` file
 
 config = {
-    "chkp_name"         : "demo_alpha2_sp",
+    "chkp_name"         : "esmc_small",
     "chkp_path"         : "models",
     "log_file"          : "train.log",
     "plot_path"         : "plots",
     "seed"              : 128,
 
-    "model"             : model.cat2_alpha_sp_side,
+    "model"             : model.plm_cat_mean,
     "model_args"        : {
-        "hla_dim_s"       : 384,
-        "hla_dim_p"       : 256,
-        "epi_dim_s"       : 384,
-        "epi_dim_p"       : 256,
-        # "hla_nhead_s"     : 8,
-        # "hla_nhead_p"     : 1,
-        # "epi_nhead_s"     : 8,
-        # "epi_nhead_p"     : 5,
+        "hla_dim_s"       : 960,
+        "hla_dim_p"       : 0,
+        "epi_dim_s"       : 960,
+        "epi_dim_p"       : 0,
+        "head_div"        : 64,
     },
 
-    "encoder"           : encoder.plm_plm_sp2,
+    "encoder"           : encoder.plm_plm_mask,
     "encoder_args"      : {
-        "hla_emb_path_s" : "/home/hwjang/project/EMB/emb_hla2_af3_single_light_0127.h5",
-        "epi_emb_path_s" : "/home/hwjang/project/EMB/emb_epi_af3_single_0127.h5",
-        "hla_emb_path_p" : "/home/hwjang/project/EMB/emb_hla2_af3_pair_light_0127_side.h5",
-        "epi_emb_path_p" : "/home/hwjang/project/EMB/emb_epi_af3_pair_0127_side.h5",
+        "hla_emb_path_s" : "/home/alpha/project/EMB/emb_hla2_esmc_small_light_0203.h5",
+        "epi_emb_path_s" : "/home/alpha/project/EMB/emb_epi_esmc_small_0203.h5",
+        # "hla_emb_path_p" : "/home/alpha/project/EMB/side/emb_hla2_chai_msa_pair_light_0127_side.h5",
+        # "epi_emb_path_p" : "/home/alpha/project/EMB/side/emb_epi_chai_pair_0127_side.h5",
     },
     "CrossValidation": {
         "num_folds"     : 5,
     },
 
     "Data": {
-        "epi_path"      : "/home/hwjang/project/IMG/data/final/mhc2_full_human_train.csv",
+        "epi_path"      : "/home/alpha/project/IMG/data/final/mhc2_full_human_train.csv",
         "epi_args"      : {
             "epi_header": 'Epi_Seq',
             "hla_header": 'HLA_Name',
             "tgt_header": 'Target',
             "seperator" : ",",
         },
-        "hla_path"      : "/home/hwjang/project/IMG/data/imgt_msa/HLA2_IMGT_MSA_light_clean.csv",
+        "hla_path"      : "/home/alpha/project/IMG/data/imgt_msa/HLA2_IMGT_MSA_light_clean.csv",
         
         "hla_args"      : {
             "hla_header": 'HLA_Name',
             "seq_header": 'HLA_Seq',
             "seperator" : ",",
         },
-        "test_path"     : "/home/hwjang/project/IMG/data/final/mhc2_full_human_test.csv",
+        "test_path"     : "/home/alpha/project/IMG/data/final/mhc2_full_human_test.csv",
         "test_args"     : {
             "epi_header": 'Epi_Seq',
             "hla_header": 'HLA_Name',
@@ -61,13 +58,13 @@ config = {
 
     "Train": {
         "batch_size"    : 128,
-        "num_epochs"    : 50,
-        "patience"      : 100,
+        "num_epochs"    : 100,
+        "patience"      : 10,
         "regularize"    : False,            # true if regularize method is implemented in the model
         "criterion"     : nn.BCEWithLogitsLoss,
         "optimizer"     : optim.AdamW,
         "optimizer_args": {
-            "lr"        : 1e-5,
+            "lr"        : 1e-4,
         },
         "use_scheduler" : False,
     },
@@ -75,8 +72,8 @@ config = {
     "Test": {
         "batch_size"    : 64,
         "chkp_prefix"   : "best",
-        "plot"          : False,
-        "feat_extract"  : True,
+        "plot"          : True,
+        "feat_extract"  : False,
         "feat_path"     : "feat_extract",
         "target_layer"  : "output_layer",
         "save_pred"     : False,
