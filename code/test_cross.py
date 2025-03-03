@@ -88,7 +88,7 @@ def plot_average_curve(curves, metric='ROC', plot_path='plots', model_name='mode
     plt.plot([0, 1], [0, 1], color='black', lw=1, linestyle='--', alpha=0.5)
     
     plt.xlim([0.0, 1.0])
-    plt.ylim([0.0, 1.05])
+    plt.ylim([0.0, 1.0])
     plt.xlabel('False Positive Rate' if metric == 'ROC' else 'Recall')
     plt.ylabel('True Positive Rate' if metric == 'ROC' else 'Precision')
     plt.title(f'Average {metric} Curve ({model_name})')
