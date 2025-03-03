@@ -118,9 +118,9 @@ class plm_cat_flat(nn.Module):
         
         flat_dim = concat_dim*(15+269)
         self.output_layer = nn.Sequential(
-            nn.Linear(flat_dim, flat_dim//2),
+            nn.Linear(flat_dim, round(flat_dim**0.5)),
             nn.ReLU(),
-            nn.Linear(flat_dim//2, 1)
+            nn.Linear(round(flat_dim**0.5), 1)
         )
 
     def forward(self, x_hla_s, x_hla_p, x_epi_s, x_epi_p, mask_hla=None, mask_epi=None):
