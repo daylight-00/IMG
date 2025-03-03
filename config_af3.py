@@ -31,7 +31,7 @@ config = {
     },
 
     "Data": {
-        "epi_path"      : "/home/alpha/project/IMG/data/final/mhc2_full_human_train.csv",
+        "epi_path"      : "/home/alpha/project/IMG/data/250303/train.csv",
         "epi_args"      : {
             "epi_header": 'Epi_Seq',
             "hla_header": 'HLA_Name',
@@ -39,20 +39,19 @@ config = {
             "seperator" : ",",
         },
         "hla_path"      : "/home/alpha/project/IMG/data/imgt_msa/HLA2_IMGT_MSA_light_clean.csv",
-        
         "hla_args"      : {
             "hla_header": 'HLA_Name',
             "seq_header": 'HLA_Seq',
             "seperator" : ",",
         },
-        "test_path"     : "/home/alpha/project/IMG/data/final/mhc2_full_human_test.csv",
+        "test_path"     : "/home/alpha/project/IMG/data/250303/test.csv",
         "test_args"     : {
             "epi_header": 'Epi_Seq',
             "hla_header": 'HLA_Name',
             "tgt_header": 'Target',
             "seperator" : ",",
         },
-        "num_workers"   : 8,
+        "num_workers"   : 4,
         "val_size"      : 0.2,
     },
 
