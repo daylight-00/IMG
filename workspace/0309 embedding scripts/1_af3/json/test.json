@@ -1,0 +1,32 @@
+{
+    "dialect": "alphafold3",
+    "version": 1,
+    "name": "test",
+    "sequences": [
+      {
+        "protein": {
+          "id": "A",
+          "sequence": "MVCLKFP",
+          "modifications": [],
+          "unpairedMsa": "",
+          "pairedMsa": "",
+          "templates": []
+        }
+      },
+      {
+        "protein": {
+          "id": "B",
+          "sequence": "MVC",
+          "modifications": [],
+          "unpairedMsa": "",
+          "pairedMsa": "",
+          "templates": []
+        }
+      }
+    ],
+    "modelSeeds": [
+      1
+    ],
+    "bondedAtomPairs": null,
+    "userCCD": null
+  }
